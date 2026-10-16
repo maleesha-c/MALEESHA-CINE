@@ -113,7 +113,7 @@ app.get('/api/v1/search', async (req, res) => {
         $('.result-item, article, .item').each((index, element) => {
             const title = $(element).find('.title a, h2 a, .entry-title a').text().trim();
             const link = $(element).find('.title a, h2 a, .entry-title a').attr('href');
-            // නිවැරදි කළ Image URL extraction කොටස
+            // මෙතන තිබුණු වැරදි කෑල්ල නිවැරදි කර ඇත (`||` දමා ඇත)
             const image = $(element).find('img').attr('src') \vert{}\vert{}$(element).find('img').attr('data-src');
 
             if (title && link) {
