@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maleesha Cine Hub - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b0f19] text-white font-sans min-h-screen p-4">
+
+    <div class="max-w-md mx-auto space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center bg-[#111827] p-4 rounded-xl border border-gray-800">
+            <span class="font-bold text-lg text-cyan-400">🎭 Maleesha Cine Hub</span>
+            <span id="user-initial" class="bg-purple-600 w-9 h-9 rounded-full flex items-center justify-center font-bold">M</span>
+        </div>
+
+        <!-- User Info Card -->
+        <div class="bg-[#111827] p-6 rounded-2xl border border-gray-800 text-center space-y-3 relative">
+            <span class="absolute top-4 left-4 text-[10px] bg-[#1f2937] text-gray-400 px-2 py-1 rounded uppercase tracking-wider">FREE ACCOUNT</span>
+            
+            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-2xl font-bold shadow-lg" id="avatar-letter">M</div>
+            
+            <div>
+                <h2 id="user-name" class="font-bold text-lg">Maleesha Poddairc</h2>
+                <p id="user-email" class="text-xs text-gray-400">maleeshapoddairc@gmail.com</p>
+            </div>
+            
+            <div class="inline-block bg-[#064e3b] text-[#34d399] text-xs px-3 py-1 rounded-full font-semibold">ACTIVE</div>
+            
+            <p id="user-uid" class="text-xs text-gray-500">UID: --</p>
+        </div>
+
+        <!-- API Key Box -->
+        <div class="bg-[#111827] p-5 rounded-2xl border border-gray-800 space-y-3">
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-semibold flex items-center gap-2">🔑 Your Developer API Key</span>
+                <button onclick="toggleKeyVisibility()" class="text-gray-400 hover:text-white text-xs">👁️ View</button>
+            </div>
+
+            <div class="bg-[#0b0f19] p-3 rounded-lg border border-gray-800 text-xs text-cyan-300 font-mono break-all select-all" id="api-key-display">
+                Loading key...
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <span class="text-[11px] text-gray-500">Never share your private key</span>
+                <button onclick="regenerateKey()" class="bg-[#1f2937] hover:bg-gray-700 text-xs px-3 py-2 rounded-lg flex items-center gap-1 text-red-400 font-semibold transition">
+                    🔄 REGENERATE KEY
+                </button>
+            </div>
+            <button onclick="copyKey()" class="w-full bg-[#1f2937] hover:bg-gray-800 text-xs py-2 rounded-lg text-gray-300 font-semibold flex items-center justify-center gap-1">
+                📋 Copy API Key
+            </button>
+        </div>
+
+        <!-- Plan & Balances -->
+        <div class="bg-[#111827] p-5 rounded-2xl border border-gray-800 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-semibold">💳 Plan & Balances</span>
+                <span class="text-xs text-cyan-400">Free Tier</span>
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex justify-between text-xs text-gray-400">
+                    <span>Free Trial Quota:</span>
+                    <span id="quota-text">-- / -- Used</span>
+                </div>
+                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                    <div id="quota-bar" class="bg-cyan-400 h-full w-[0%] transition-all"></div>
+                </div>
+                <p class="text-[10px] text-gray-500">One-time Free Trial Quota (Permanent!)</p>
+            </div>
+
+            <div class="bg-[#0b0f19] p-3 rounded-xl flex justify-between items-center border border-gray-800">
+                <div>
+                    <p class="text-xs font-semibold text-gray-300">Available Extra Coins:</p>
+                    <p class="text-[10px] text-gray-500">Never expires • Use anytime</p>
+                </div>
+                <span id="coins-text" class="text-amber-400 font-bold text-sm">-- Coins</span>
+            </div>
+
+            <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-bold py-2.5 rounded-xl text-xs shadow-lg hover:opacity-95 transition">
+                Upgrade Plan / Top-Up Coins
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentApiKey = '';
+        let isMasked = true;
+
+        async function fetchUserData() {
+            try {
+                const res = await fetch('/api/user/profile');
+                const data = await res.json();
+                if(data.status) {
+                    const u = data.user;
+                    document.getElementById('user-name').innerText = u.name;
+                    document.getElementById('user-email').innerText = u.email;
+                    document.getElementById('user-uid').innerText = `UID: ${u.uid}`;
+                    document.getElementById('user-initial').innerText = u.name.charAt(0);
+                    document.getElementById('avatar-letter').innerText = u.name.charAt(0);
+                    
+                    currentApiKey = u.apiKey;
+                    document.getElementById('api-key-display').innerText = '•'.repeat(u.apiKey.length);
+                    
+                    document.getElementById('quota-text').innerText = `${u.usedQuota} / ${u.totalQuota} Used (${u.totalQuota - u.usedQuota} Left)`;
+                    let percentage = (u.usedQuota / u.totalQuota) * 100;
+                    document.getElementById('quota-bar').style.width = `${percentage}%`;
+                    
+                    document.getElementById('coins-text').innerText = `${u.coins} Coins`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function toggleKeyVisibility() {
+            if(!currentApiKey) return;
+            const keyEl = document.getElementById('api-key-display');
+            if(isMasked) {
+                keyEl.innerText = currentApiKey;
+                isMasked = false;
+            } else {
+                keyEl.innerText = '•'.repeat(currentApiKey.length);
+                isMasked = true;
+            }
+        }
+
+        function copyKey() {
+            if(!currentApiKey) return;
+            navigator.clipboard.writeText(currentApiKey);
+            alert('API Key Copied to Clipboard!');
+        }
+
+        async function regenerateKey() {
+            if(!confirm('ඔබට නව API Key එකක් සාදා ගැනීමට අවශ්‍යද?')) return;
+            const res = await fetch('/api/user/regenerate', { method: 'POST' });
+            const data = await res.json();
+            if(data.status) {
+                currentApiKey = data.apiKey;
+                document.getElementById('api-key-display').innerText = currentApiKey;
+                isMasked = false;
+                alert('New API Key Generated Successfully!');
+            }
+        }
+
+        fetchUserData();
+    </script>
+</body>
+  </html>
