@@ -36,15 +36,20 @@ const User = mongoose.model('User', userSchema);
 
 // --- API ROUTES ---
 
-// 1. Get User Profile / Dashboard Data
+// 1. Get User Profile / Dashboard Data (Dynamic via Google Login)
 app.get('/api/user/profile', async (req, res) => {
     try {
-        let user = await User.findOne({ email: 'maleeshapoddairc@gmail.com' });
+        const { email, name, uid } = req.query;
+        if (!email) {
+            return res.status(400).json({ status: false, message: 'Email is required' });
+        }
+
+        let user = await User.findOne({ email });
         if (!user) {
             user = new User({
-                uid: 'g_' + Math.floor(Math.random() * 100000000000000000),
-                name: 'Maleesha Poddairc',
-                email: 'maleeshapoddairc@gmail.com',
+                uid: 'g_' + (uid || Math.floor(Math.random() * 100000000000000000)),
+                name: name || 'Cine Hub User',
+                email: email,
                 apiKey: 'maleesha_api_' + crypto.randomBytes(16).toString('hex'),
                 plan: 'Free Tier',
                 usedQuota: 15,
@@ -62,12 +67,20 @@ app.get('/api/user/profile', async (req, res) => {
 // 2. Regenerate API Key
 app.post('/api/user/regenerate', async (req, res) => {
     try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ status: false, message: 'Email is required' });
+        }
+
         const newApiKey = 'maleesha_api_' + crypto.randomBytes(16).toString('hex');
         const user = await User.findOneAndUpdate(
-            { email: 'maleeshapoddairc@gmail.com' },
+            { email },
             { apiKey: newApiKey },
             { new: true }
         );
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'User not found' });
+        }
         res.json({ status: true, apiKey: user.apiKey });
     } catch (error) {
         res.status(500).json({ status: false, message: error.message });
@@ -113,7 +126,7 @@ app.get('/api/v1/search', async (req, res) => {
         $('.result-item, article, .item').each((index, element) => {
             const title = $(element).find('.title a, h2 a, .entry-title a').text().trim();
             const link = $(element).find('.title a, h2 a, .entry-title a').attr('href');
-            const image = $(element).find('img').attr('src') || $(element).find('img').attr('data-src');
+            const image = $(element).find('img').attr('src') \vert{}\vert{}$(element).find('img').attr('data-src');
 
             if (title && link) {
                 results.push({ title, link, image });
