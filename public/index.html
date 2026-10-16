@@ -5,30 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maleesha Cine Hub - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
-<body class="bg-[#0b0f19] text-white font-sans min-h-screen p-4">
+<body class="bg-[#0b0f19] text-white font-sans min-h-screen p-4 flex items-center justify-center">
 
-    <div class="max-w-md mx-auto space-y-6">
+    <!-- Login View (Before Google Sign-In) -->
+    <div id="login-container" class="max-w-md w-full bg-[#111827] p-8 rounded-2xl border border-gray-800 text-center space-y-6 shadow-2xl">
+        <div class="space-y-2">
+            <span class="text-3xl">🎭</span>
+            <h1 class="text-xl font-bold text-cyan-400">Maleesha Cine Hub</h1>
+            <p class="text-xs text-gray-400">Sign in with your Google account to access your Developer Dashboard & API Key.</p>
+        </div>
+        <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-3 transition shadow">
+            <svg class="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Continue with Google
+        </button>
+    </div>
+
+    <!-- Dashboard View (After Google Sign-In) -->
+    <div id="dashboard-container" class="max-w-md w-full space-y-6 hidden">
         <!-- Header -->
         <div class="flex justify-between items-center bg-[#111827] p-4 rounded-xl border border-gray-800">
             <span class="font-bold text-lg text-cyan-400">🎭 Maleesha Cine Hub</span>
-            <span id="user-initial" class="bg-purple-600 w-9 h-9 rounded-full flex items-center justify-center font-bold">M</span>
+            <button onclick="logout()" class="text-xs bg-red-500/10 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Logout</button>
         </div>
 
         <!-- User Info Card -->
         <div class="bg-[#111827] p-6 rounded-2xl border border-gray-800 text-center space-y-3 relative">
             <span class="absolute top-4 left-4 text-[10px] bg-[#1f2937] text-gray-400 px-2 py-1 rounded uppercase tracking-wider">FREE ACCOUNT</span>
             
-            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-2xl font-bold shadow-lg" id="avatar-letter">M</div>
+            <img id="user-avatar" src="" class="w-16 h-16 mx-auto rounded-full border-2 border-purple-500 shadow-lg object-cover" alt="Avatar">
             
             <div>
-                <h2 id="user-name" class="font-bold text-lg">Maleesha Poddairc</h2>
-                <p id="user-email" class="text-xs text-gray-400">maleeshapoddairc@gmail.com</p>
+                <h2 id="user-name" class="font-bold text-lg">--</h2>
+                <p id="user-email" class="text-xs text-gray-400">--</p>
             </div>
             
             <div class="inline-block bg-[#064e3b] text-[#34d399] text-xs px-3 py-1 rounded-full font-semibold">ACTIVE</div>
             
-            <p id="user-uid" class="text-xs text-gray-500">UID: --</p>
+            <p id="user-uid" class="text-xs text-gray-500 font-mono">UID: --</p>
         </div>
 
         <!-- API Key Box -->
@@ -68,7 +90,6 @@
                 <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
                     <div id="quota-bar" class="bg-cyan-400 h-full w-[0%] transition-all"></div>
                 </div>
-                <p class="text-[10px] text-gray-500">One-time Free Trial Quota (Permanent!)</p>
             </div>
 
             <div class="bg-[#0b0f19] p-3 rounded-xl flex justify-between items-center border border-gray-800">
@@ -78,29 +99,63 @@
                 </div>
                 <span id="coins-text" class="text-amber-400 font-bold text-sm">-- Coins</span>
             </div>
-
-            <button class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-bold py-2.5 rounded-xl text-xs shadow-lg hover:opacity-95 transition">
-                Upgrade Plan / Top-Up Coins
-            </button>
         </div>
     </div>
 
     <script>
+        // Replace with your Firebase Web App Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
         let currentApiKey = '';
         let isMasked = true;
+        let loggedInEmail = '';
 
-        async function fetchUserData() {
+        function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch((error) => {
+                alert('Login Failed: ' + error.message);
+            });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                loggedInEmail = user.email;
+                document.getElementById('login-container').classList.add('hidden');
+                document.getElementById('dashboard-container').classList.remove('hidden');
+                
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-email').innerText = user.email;
+                document.getElementById('user-avatar').src = user.photoURL;
+
+                // Fetch or Register user in Backend
+                await fetchUserData(user.email, user.displayName, user.uid);
+            } else {
+                document.getElementById('dashboard-container').classList.add('hidden');
+                document.getElementById('login-container').classList.remove('hidden');
+            }
+        });
+
+        async function fetchUserData(email, name, firebaseUid) {
             try {
-                const res = await fetch('/api/user/profile');
+                const res = await fetch(`/api/user/profile?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&uid=${encodeURIComponent(firebaseUid)}`);
                 const data = await res.json();
                 if(data.status) {
                     const u = data.user;
-                    document.getElementById('user-name').innerText = u.name;
-                    document.getElementById('user-email').innerText = u.email;
                     document.getElementById('user-uid').innerText = `UID: ${u.uid}`;
-                    document.getElementById('user-initial').innerText = u.name.charAt(0);
-                    document.getElementById('avatar-letter').innerText = u.name.charAt(0);
-                    
                     currentApiKey = u.apiKey;
                     document.getElementById('api-key-display').innerText = '•'.repeat(u.apiKey.length);
                     
@@ -135,7 +190,11 @@
 
         async function regenerateKey() {
             if(!confirm('ඔබට නව API Key එකක් සාදා ගැනීමට අවශ්‍යද?')) return;
-            const res = await fetch('/api/user/regenerate', { method: 'POST' });
+            const res = await fetch('/api/user/regenerate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: loggedInEmail })
+            });
             const data = await res.json();
             if(data.status) {
                 currentApiKey = data.apiKey;
@@ -144,8 +203,6 @@
                 alert('New API Key Generated Successfully!');
             }
         }
-
-        fetchUserData();
     </script>
 </body>
 </html>
